@@ -13,3 +13,4 @@ while len(caracter2) != 1:
     caracter2 = input("Introduce un carácter válido: ")
 
 print(cadena.replace(caracter1, caracter2))
+
