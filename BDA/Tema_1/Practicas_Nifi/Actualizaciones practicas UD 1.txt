@@ -1,0 +1,65 @@
+
+Actualizaciones de las prácticas (25/26):
+
+**************************************************************************************************************************************************************
+*                                                                                                                                                            *
+*                                                                        Sección Nifi                                                                        *
+*                                                                                                                                                            *
+**************************************************************************************************************************************************************
+
+Descargaremos la versión 2.5.0. de Nifi.
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Actualizar la versión de Java (Solo lo actualizamos en Nifi):
+
+- Instalar Java 21 en paralelo (sin tocar el sistema)
+
+    sudo apt update
+    sudo apt install openjdk-21-jdk
+
+- Comprueba la ruta:
+
+    ls -d /usr/lib/jvm/java-21-openjdk-amd64
+
+- Mantener Java 11 como predeterminado en el sistema
+
+    sudo update-alternatives --config java
+    sudo update-alternatives --config javac
+    Selecciona la entrada de Java 11.
+
+- Verifica:
+   
+    java -version   # debe mostrar 11
+
+- Configurar NiFi para usar Java 21
+
+    sudo nano /opt/nifi/bin/nifi-env.sh
+
+    JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+En la versión 2.5. de Nifi no existen las plantillas. Para obtener el JSON haremos:
+
+1. Creamos un process group con los procesos.
+
+2. Sobre el grupo, le damos al botón derecho. En el menú contextual seleccionaremos la descarga del "Flow Definition".
+
+3. Añadimos el nuevo process group e indicamos la plantilla con la que queremos trabajar.
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Como en la versión 2.5.0. no viene por defecto la gestión de HDFS, instalamos los elementos nar.
+
+1. Descargamos los NARs
+
+    wget https://repo1.maven.org/maven2/org/apache/nifi/nifi-hadoop-nar/2.5.0/nifi-hadoop-nar-2.5.0.nar
+    wget https://repo1.maven.org/maven2/org/apache/nifi/nifi-hadoop-libraries-nar/2.5.0/nifi-hadoop-libraries-nar-2.5.0.nar
+
+2. Copiamos ambos en el directorio lib de NiFi
+    sudo cp nifi-hadoop-*.nar /opt/nifi/lib/
+
+3. Reiniciamos NiFi
+    /opt/nifi/bin/nifi.sh restart
+
