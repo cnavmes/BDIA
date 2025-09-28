@@ -22,8 +22,3 @@ elif numero >= 0 and numero <= 10:
 else:
     print("Numero mayor que 10")
     print(f"{numero} es menor que cero")
-elif 0 <= numero <= 10: # Esta es una forma más concisa de escribir la condición
-elif 0 <= numero <= 10: # Esta es una forma más concisa y legible de escribir la condición
-    print(f"{numero} está entre 0 y 10 (inclusive)")
-else: # numero > 10
-    print(f"{numero} es mayor que 10")
