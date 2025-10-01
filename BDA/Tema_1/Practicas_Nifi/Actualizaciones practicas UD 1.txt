@@ -1,4 +1,3 @@
-
 Actualizaciones de las prácticas (25/26):
 
 **************************************************************************************************************************************************************
@@ -7,32 +6,32 @@ Actualizaciones de las prácticas (25/26):
 *                                                                                                                                                            *
 **************************************************************************************************************************************************************
 
-Descargaremos la versión 2.5.0. de Nifi.
+Descargaremos la versión 2.6.0. de Nifi.
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-Actualizar la versión de Java (Solo lo actualizamos en Nifi):
+Actualizamos la versión de Java (Solo lo actualizamos en Nifi):
 
-- Instalar Java 21 en paralelo (sin tocar el sistema)
+- Instalamos Java 21 en paralelo (sin tocar el sistema)
 
     sudo apt update
     sudo apt install openjdk-21-jdk
 
-- Comprueba la ruta:
+- Comprobamos la ruta:
 
     ls -d /usr/lib/jvm/java-21-openjdk-amd64
 
-- Mantener Java 11 como predeterminado en el sistema
+- Mantenemos Java 11 como predeterminado en el sistema
 
     sudo update-alternatives --config java
     sudo update-alternatives --config javac
     Selecciona la entrada de Java 11.
 
-- Verifica:
+- Verificamos:
    
     java -version   # debe mostrar 11
 
-- Configurar NiFi para usar Java 21
+- Configuramos NiFi para usar Java 21
 
     sudo nano /opt/nifi/bin/nifi-env.sh
 
@@ -40,7 +39,7 @@ Actualizar la versión de Java (Solo lo actualizamos en Nifi):
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-En la versión 2.5. de Nifi no existen las plantillas. Para obtener el JSON haremos:
+En la versión 2.6. de Nifi no existen las plantillas. Para obtener el JSON haremos:
 
 1. Creamos un process group con los procesos.
 
@@ -58,8 +57,97 @@ Como en la versión 2.5.0. no viene por defecto la gestión de HDFS, instalamos 
     wget https://repo1.maven.org/maven2/org/apache/nifi/nifi-hadoop-libraries-nar/2.5.0/nifi-hadoop-libraries-nar-2.5.0.nar
 
 2. Copiamos ambos en el directorio lib de NiFi
+
     sudo cp nifi-hadoop-*.nar /opt/nifi/lib/
 
 3. Reiniciamos NiFi
+
     /opt/nifi/bin/nifi.sh restart
 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+En la práctica 6 ya no se puede usar ConvertAvroToJSON o Parquet. En la versión 2.6 solamente encontramos ConvertRecord.
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+En la práctica 7 no hace falta ZooKeeper. Descargamos Kafka 4.1.0.
+
+Motivo:
+
+Hasta la versión 2.7, Apache Kafka dependía de ZooKeeper para gestionar la metadata del clúster. ZooKeeper almacenaba información sobre los brokers activos, 
+los tópicos, las particiones y sus réplicas, además de coordinar la elección de líderes y detectar fallos de nodos mediante znodes efímeros. En la práctica, 
+ZooKeeper actuaba como un servicio externo de coordinación imprescindible para que Kafka pudiera operar en alta disponibilidad y con tolerancia a fallos.
+
+Con la llegada del modo KRaft (Kafka Raft Metadata mode), Kafka ya no necesita ZooKeeper. Ahora la metadata se guarda en un log replicado dentro de los propios 
+brokers, y el consenso se mantiene mediante el algoritmo Raft. Esto simplifica la arquitectura, elimina la dependencia de un sistema externo y mejora la 
+escalabilidad en clústeres grandes. Desde Kafka 3.3 KRaft se considera estable para producción y en las versiones actuales ZooKeeper ya está en proceso de 
+eliminación definitiva.
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+ls -lart /opt/hafha/bin/kafka-run-class.sh
+
+Práctica 7. Configuración inicial de Kafka.
+
+1. Creamos el directorio de metadatos
+
+    sudo mkdir -p /opt/kafka-data
+    sudo chown -R hadoop:hadoop /opt/kafka-data
+
+2. Editamos la configuración server.properties
+
+    En $KAFKA_HOME/config/server.properties, asegúrate de que estén estas líneas (mínimo para un nodo en KRaft):
+
+    process.roles=broker,controller
+    node.id=1
+
+    listeners=PLAINTEXT://:9092,CONTROLLER://:9093
+    advertised.listeners=PLAINTEXT://localhost:9092
+    controller.listener.names=CONTROLLER
+    listener.security.protocol.map=PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+    inter.broker.listener.name=PLAINTEXT
+
+    # Quorum KRaft (node.id@host:puerto_del_listener_CONTROLLER)
+    controller.quorum.voters=1@localhost:9093
+
+    # Carpeta de logs y metadatos
+    log.dirs=/opt/kafka-data
+
+3. Generamos el cluster.id
+
+    UUID=$($KAFKA_HOME/bin/kafka-storage.sh random-uuid)
+    echo $UUID
+
+    Esto devuelve algo como:
+
+    aBCdEfGhIjKlMnOpQrStUv
+
+4. Formateamos el almacenamiento
+
+    $KAFKA_HOME/bin/kafka-storage.sh format -t $UUID -c $KAFKA_HOME/config/server.properties
+
+5. Verificamos el meta.properties
+
+    cat /opt/kafka-data/meta.properties
+
+    Deberías ver algo así:
+
+    version=1
+    cluster.id=aBCdEfGhIjKlMnOpQrStUv
+    node.id=1
+
+6. Arrancamos Kafka
+
+    kafka-server-start.sh $KAFKA_HOME/config/server.properties &
+	
+    Para pararlo es kafka-server-stop.sh
+
+
+**************************************************************************************************************************************************************
+*                                                                                                                                                            *
+*                                                                       Sección Dremio                                                                       *
+*                                                                                                                                                            *
+**************************************************************************************************************************************************************
+
+Descargaremos la versión 26.0.5. de Dremio.
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------

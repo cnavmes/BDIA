@@ -1,0 +1,97 @@
+WITH CrossJoinData AS (
+    SELECT
+        r1."Invoice ID" AS InvoiceID_1,
+        r1."City" AS City_1,
+        r1."Product line" AS ProductLine_1,
+        r1."Total" AS Total_1,
+        r1."Quantity" AS Quantity_1,
+        r1."Unit price" AS UnitPrice_1,
+        r1."Rating" AS Rating_1,
+        r1."Date" AS Date_1,
+        r1."Payment" AS Payment_1,
+        r2."Invoice ID" AS InvoiceID_2,
+        r2."City" AS City_2,
+        r2."Product line" AS ProductLine_2,
+        r2."Total" AS Total_2,
+        r2."Quantity" AS Quantity_2,
+        r2."Unit price" AS UnitPrice_2,
+        r2."Rating" AS Rating_2,
+        r2."Date" AS Date_2,
+        r2."Payment" AS Payment_2
+    FROM
+        supermarket_sales r1
+    CROSS JOIN
+        supermarket_sales r2
+),
+ExpandedData AS (
+    SELECT
+        *,
+        RANK() OVER (PARTITION BY City_1 ORDER BY Total_1 DESC) AS Sales_Rank_1,
+        RANK() OVER (PARTITION BY City_2 ORDER BY Total_2 DESC) AS Sales_Rank_2,
+        ROW_NUMBER() OVER (PARTITION BY ProductLine_1 ORDER BY Rating_1 DESC) AS Rating_Rank_1,
+        ROW_NUMBER() OVER (PARTITION BY ProductLine_2 ORDER BY Rating_2 DESC) AS Rating_Rank_2,
+        NTILE(10) OVER (ORDER BY Total_1 DESC) AS Decile_1,
+        NTILE(10) OVER (ORDER BY Total_2 DESC) AS Decile_2
+    FROM
+        CrossJoinData
+),
+AggregatedData AS (
+    SELECT
+        City_1,
+        ProductLine_1,
+        AVG(CAST(Total_1 AS FLOAT) + CAST(Total_2 AS FLOAT)) AS Average_Sales,
+        SUM(CAST(Quantity_1 AS INTEGER) + CAST(Quantity_2 AS INTEGER)) AS Total_Quantity_Sold,
+        COUNT(DISTINCT InvoiceID_1) + COUNT(DISTINCT InvoiceID_2) AS Total_Invoices,
+        MAX(GREATEST(CAST(Rating_1 AS FLOAT), CAST(Rating_2 AS FLOAT))) AS Max_Rating,
+        SUM(CAST(UnitPrice_1 AS FLOAT) + CAST(UnitPrice_2 AS FLOAT)) / COUNT(*) AS Avg_Price_Per_Item,
+        SUM(CASE WHEN Payment_1 = 'Cash' THEN CAST(Total_1 AS FLOAT) ELSE 0 END + CASE WHEN Payment_2 = 'Cash' THEN CAST(Total_2 AS FLOAT) ELSE 0 END) AS Cash_Sales,
+        SUM(CASE WHEN Payment_1 = 'Ewallet' THEN CAST(Total_1 AS FLOAT) ELSE 0 END + CASE WHEN Payment_2 = 'Ewallet' THEN CAST(Total_2 AS FLOAT) ELSE 0 END) AS Ewallet_Sales,
+        SUM(CASE WHEN Decile_1 = Decile_2 THEN 1 ELSE 0 END) AS Matching_Deciles,
+        AVG(Sales_Rank_1 + Sales_Rank_2) AS Avg_Sales_Rank
+    FROM
+        ExpandedData
+    GROUP BY
+        City_1,
+        ProductLine_1,
+        Sales_Rank_1,
+        Rating_Rank_1,
+        Decile_1,
+        Decile_2
+),
+FinalData AS (
+    SELECT
+        *,
+        LAG(Average_Sales) OVER (ORDER BY Avg_Sales_Rank DESC) AS Prev_Avg_Sales,
+        LAG(Max_Rating) OVER (ORDER BY Max_Rating DESC) AS Prev_Max_Rating,
+        LEAD(Total_Quantity_Sold) OVER (ORDER BY Total_Quantity_Sold DESC) AS Next_Total_Quantity_Sold
+    FROM
+        AggregatedData
+)
+SELECT
+    City_1 AS City,
+    ProductLine_1 AS Product_Line,
+    Average_Sales,
+    Total_Quantity_Sold,
+    Total_Invoices,
+    Max_Rating,
+    Avg_Price_Per_Item,
+    Cash_Sales,
+    Ewallet_Sales,
+    Matching_Deciles,
+    Avg_Sales_Rank,
+    Prev_Avg_Sales,
+    Prev_Max_Rating,
+    Next_Total_Quantity_Sold,
+    CASE
+        WHEN Prev_Avg_Sales IS NOT NULL THEN Average_Sales - Prev_Avg_Sales
+        ELSE NULL
+    END AS Sales_Change_From_Prev,
+    CASE
+        WHEN Prev_Max_Rating IS NOT NULL THEN Max_Rating - Prev_Max_Rating
+        ELSE NULL
+    END AS Rating_Change_From_Prev
+FROM
+    FinalData
+ORDER BY
+    Average_Sales DESC,
+    Max_Rating DESC;
