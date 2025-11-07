@@ -1,4 +1,3 @@
-Perfecto — lo desgloso **línea a línea** y luego hago un **trazado paso a paso** con un ejemplo. Iré explicando el *porqué* de cada cosa para que quede claro.
 
 # 1) Código (para referencia)
 
