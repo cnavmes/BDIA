@@ -1,0 +1,22 @@
+\babel@toc {spanish}{}\relax 
+\contentsline {section}{\numberline {1}Introducción}{2}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Descripción general}{2}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Objetivos}{2}{subsection.1.2}%
+\contentsline {section}{\numberline {2}Alcance del Proyecto}{2}{section.2}%
+\contentsline {section}{\numberline {3}Metodología y Desarrollo}{3}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Fases del proyecto}{3}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Arquitectura del sistema}{3}{subsection.3.2}%
+\contentsline {paragraph}{Diagrama de arquitectura (ejemplo conceptual)}{4}{section*.2}%
+\contentsline {section}{\numberline {4}Herramientas y tecnologías}{4}{section.4}%
+\contentsline {section}{\numberline {5}Resultados}{5}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Funcionamiento del pipeline}{5}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Interfaz de usuario}{5}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Ejemplos de preguntas y respuestas}{5}{subsection.5.3}%
+\contentsline {section}{\numberline {6}Evaluación y pruebas}{5}{section.6}%
+\contentsline {section}{\numberline {7}Limitaciones y riesgos}{5}{section.7}%
+\contentsline {section}{\numberline {8}Impacto social}{5}{section.8}%
+\contentsline {section}{\numberline {9}Conclusiones y trabajo futuro}{6}{section.9}%
+\contentsline {subsection}{\numberline {9.1}Conclusiones}{6}{subsection.9.1}%
+\contentsline {subsection}{\numberline {9.2}Trabajo futuro}{6}{subsection.9.2}%
+\contentsline {section}{\numberline {10}Consideraciones éticas y legales}{6}{section.10}%
+\contentsline {section}{\numberline {11}Referencias}{6}{section.11}%

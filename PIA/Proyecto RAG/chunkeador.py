@@ -3,7 +3,7 @@ import json
 
 # Parámetros configurables
 txt_folder = '/home/crixo/dev/BDIA/PIA/Proyecto RAG/textos_limpios'
-output_json = 'todos_los_chunks.json'
+output_json = '/Volumes/MacEx/DEV/BDIA/PIA/Proyecto_RAG_Local/todos_los_chunks.json'
 chunk_size = 300        # palabras
 overlap = 50            # palabras
 

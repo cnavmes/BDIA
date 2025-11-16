@@ -1,0 +1,9 @@
+Flask
+requests
+chromadb
+sentence-transformers
+PyMuPDF
+trafilatura
+beautifulsoup4
+lxml
+numpy
