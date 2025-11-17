@@ -3,6 +3,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[spanish]{babel}
+\renewcommand{\contentsname}{Índice}  % Cambia "Contents" por "Índice"
 
 \usepackage{graphicx}
 \usepackage{listings}
@@ -14,6 +15,40 @@
 \def\UrlBreaks{\do\/\do-}
 
 \geometry{margin=2.5cm}
+
+\usepackage{xcolor}
+
+% Definir colores para el código
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+% Estilo personalizado para Python
+\lstdefinestyle{pythonstyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    frame=single,
+    rulecolor=\color{black}
+}
+
+\lstset{style=pythonstyle}
+
+
 
 \title{Proyecto RAG: Asistente de Trámites para Familias con Miembros con Autismo en Andalucía}
 \author{Cristóbal Navas Mesa}
@@ -40,14 +75,18 @@
     \vfill
 \end{titlepage}
 
-\newpage
 
-\tableofcontents
+
+
 \newpage
 
 \begin{abstract}
 Este documento presenta el desarrollo de un sistema Retrieval-Augmented Generation (RAG) como asistente para familias con miembros con Trastorno del Espectro Autista (TEA) en Andalucía. El sistema facilita la consulta de normativa administrativa, ayudas y trámites mediante técnicas de procesamiento de lenguaje natural e inteligencia artificial.
 \end{abstract}
+
+\newpage
+\tableofcontents
+\newpage
 
 \section{Introducción}
 
@@ -104,13 +143,100 @@ El sistema se centra en los trámites y recursos para familias con miembros con 
 
 \subsection{Arquitectura del sistema}
 
-El sistema consta de:
+El sistema implementa una arquitectura modular basada en el patrón RAG (Retrieval-Augmented Generation), separando claramente las responsabilidades entre componentes independientes pero interconectados. Esta arquitectura facilita el mantenimiento, escalabilidad y modificación de componentes específicos sin afectar al resto del sistema.
+
+\subsubsection{Componentes principales}
+
+\paragraph{Pipeline de procesamiento de datos}
+Módulo offline responsable de la ingesta, transformación y preparación de documentos normativos:
+
 \begin{itemize}
-    \item \textbf{Pipeline de procesamiento de datos}: Módulos para extracción, limpieza, chunking y embedding.
-    \item \textbf{Base vectorial}: ChromaDB donde se almacenan embeddings y metadatos.
-    \item \textbf{Backend LLM}: Servicio local LM Studio que genera respuestas.
-    \item \textbf{Interfaz web}: Aplicación Flask para interacción usuario-sistema.
+    \item \textbf{Extractor de documentos}: Descarga automática desde URLs oficiales y conversión de PDF/HTML a texto plano.
+    \item \textbf{Limpiador de texto}: Normalización de codificaciones, eliminación de elementos no informativos (encabezados, pies de página, numeración).
+    \item \textbf{Chunker}: Segmentación inteligente del texto en fragmentos de 500 caracteres con solapamiento de 100 caracteres para preservar contexto.
+    \item \textbf{Generador de embeddings}: Creación de representaciones vectoriales mediante modelos Sentence Transformers optimizados para español.
+    \item \textbf{Gestor de metadatos}: Asociación de información contextual (fuente, título, fecha, categoría) a cada chunk procesado.
 \end{itemize}
+
+\paragraph{Base de datos vectorial}
+ChromaDB actúa como almacén persistente y motor de búsqueda semántica:
+
+\begin{itemize}
+    \item Almacenamiento eficiente de embeddings de 384 dimensiones.
+    \item Índice optimizado para búsqueda por similitud coseno.
+    \item Persistencia local sin dependencias externas.
+    \item Recuperación rápida de los k documentos más relevantes (típicamente k=5).
+\end{itemize}
+
+\paragraph{Backend LLM}
+Servicio de generación de respuestas mediante LM Studio:
+
+\begin{itemize}
+    \item Servidor local con API REST compatible con OpenAI.
+    \item Carga de modelos en formato GGUF con cuantización para optimización de memoria.
+    \item Generación de respuestas contextualizadas basadas en fragmentos recuperados.
+    \item Control de temperatura, tokens máximos y otros hiperparámetros.
+\end{itemize}
+
+\paragraph{Capa de aplicación}
+Servidor Flask que orquesta la lógica de negocio:
+
+\begin{itemize}
+    \item Recepción y validación de consultas del usuario.
+    \item Generación de embeddings para la query en tiempo real.
+    \item Coordinación de búsqueda semántica en ChromaDB.
+    \item Construcción de prompts enriquecidos con contexto recuperado.
+    \item Envío de peticiones al LLM y postprocesamiento de respuestas.
+    \item Gestión de historial de conversación y sesiones de usuario.
+\end{itemize}
+
+\paragraph{Interfaz web}
+Frontend responsivo desarrollado con HTML, CSS (Tailwind) y JavaScript vanilla:
+
+\begin{itemize}
+    \item Formulario de consulta en lenguaje natural.
+    \item Visualización de respuestas con formato Markdown.
+    \item Presentación de fuentes documentales citadas.
+    \item Historial de interacciones dentro de la sesión.
+    \item Diseño oscuro optimizado para lectura prolongada.
+    \item Adaptación responsive para dispositivos móviles.
+\end{itemize}
+
+\subsubsection{Flujo de datos}
+
+El funcionamiento del sistema sigue un flujo claramente definido:
+
+\begin{enumerate}
+    \item \textbf{Fase de preparación (offline)}:
+    \begin{itemize}
+        \item Recopilación de documentos normativos desde fuentes oficiales.
+        \item Procesamiento mediante el pipeline (extracción, limpieza, chunking).
+        \item Generación de embeddings y almacenamiento en ChromaDB.
+    \end{itemize}
+    
+    \item \textbf{Fase de consulta (online)}:
+    \begin{itemize}
+        \item Usuario introduce pregunta en la interfaz web.
+        \item Backend Flask recibe la consulta y genera su embedding.
+        \item Búsqueda semántica en ChromaDB recupera chunks relevantes.
+        \item Construcción de prompt contextualizado con fragmentos recuperados.
+        \item Envío al LLM local que genera respuesta fundamentada.
+        \item Postprocesamiento y presentación al usuario con fuentes citadas.
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Ventajas arquitectónicas}
+
+Esta arquitectura proporciona varios beneficios clave:
+
+\begin{itemize}
+    \item \textbf{Privacidad}: Ejecución completamente local sin envío de datos sensibles a servicios externos.
+    \item \textbf{Modularidad}: Cada componente puede actualizarse independientemente.
+    \item \textbf{Escalabilidad}: La base vectorial puede ampliarse con nuevos documentos sin modificar el código.
+    \item \textbf{Trazabilidad}: Cada respuesta incluye referencias a los documentos fuente originales.
+    \item \textbf{Flexibilidad}: Posibilidad de cambiar el modelo LLM sin afectar otros componentes.
+\end{itemize}
+
 
 \paragraph{Diagrama de arquitectura (ejemplo conceptual)}
 \vspace{0.5cm}
@@ -125,13 +251,61 @@ El sistema consta de:
 
 \section{Herramientas y tecnologías}
 
+El desarrollo del sistema se ha fundamentado en tecnologías modernas y robustas del ecosistema Python, priorizando soluciones open source y bibliotecas consolidadas en el ámbito del procesamiento de lenguaje natural y desarrollo web.
+
+\subsection{Lenguajes y frameworks principales}
+
 \begin{itemize}
-    \item \textbf{Python} con librerías como requests, Flask, chromadb para la orquestación y procesamiento.
-    \item \textbf{LM Studio}: Modelo de lenguaje local utilizado para la generación y respuesta.
-    \item \textbf{ChromaDB}: Base de datos vectorial para almacenamiento y búsqueda semántica eficiente.
-    \item \textbf{Tailwind CSS}: Framework CSS para diseño responsivo y accesible de la interfaz web.
-    \item \textbf{Librerías para extracción y limpieza}: Herramientas para convertir PDFs/HTML a texto y normalizar datos.
+    \item \textbf{Python 3.10+}: Lenguaje base para todo el desarrollo del pipeline de procesamiento, backend y orquestación de componentes.
+    \item \textbf{Flask}: Framework web ligero utilizado para crear la API REST y servir la interfaz de usuario.
+    \item \textbf{HTML5, CSS3 y JavaScript}: Tecnologías frontend para la construcción de la interfaz web interactiva.
+    \item \textbf{Tailwind CSS}: Framework CSS utility-first para diseño responsivo, accesible y moderno de la interfaz.
 \end{itemize}
+
+\subsection{Procesamiento de lenguaje natural}
+
+\begin{itemize}
+    \item \textbf{LangChain}: Framework para desarrollo de aplicaciones basadas en LLM, facilitando la integración entre modelos, prompts y bases vectoriales.
+    \item \textbf{Sentence Transformers}: Biblioteca para generar embeddings semánticos de alta calidad en español mediante modelos como \texttt{paraphrase-multilingual-MiniLM-L12-v2}.
+    \item \textbf{LM Studio}: Plataforma para ejecución local de modelos de lenguaje grandes (LLM), permitiendo privacidad y control sobre los datos sensibles.
+    \item \textbf{Modelos utilizados}: Llama 2, Mistral o modelos equivalentes optimizados para español en formato GGUF para eficiencia.
+\end{itemize}
+
+\subsection{Almacenamiento y bases de datos}
+
+\begin{itemize}
+    \item \textbf{ChromaDB}: Base de datos vectorial embebida para almacenamiento eficiente de embeddings y búsqueda por similitud semántica.
+    \item \textbf{SQLite} (opcional): Base de datos relacional para metadatos, logs y configuración del sistema.
+\end{itemize}
+
+\subsection{Extracción y procesamiento de documentos}
+
+\begin{itemize}
+    \item \textbf{PyPDF2 / pdfplumber}: Librerías para extracción de texto de documentos PDF con diferentes estructuras y formatos.
+    \item \textbf{BeautifulSoup4}: Parser HTML/XML para extracción de contenido de páginas web oficiales.
+    \item \textbf{Requests}: Biblioteca HTTP para descarga automatizada de documentos desde URLs oficiales.
+    \item \textbf{python-docx}: Procesamiento de documentos Microsoft Word cuando es necesario.
+    \item \textbf{Regex (re)}: Expresiones regulares para limpieza, normalización y estructuración de texto extraído.
+\end{itemize}
+
+\subsection{Entorno de desarrollo y despliegue}
+
+\begin{itemize}
+    \item \textbf{Git}: Control de versiones para gestión del código fuente.
+    \item \textbf{Visual Studio Code}: IDE principal con extensiones para Python y desarrollo web.
+    \item \textbf{Jupyter Notebooks}: Entorno interactivo para experimentación, análisis y visualización de datos durante el desarrollo.
+    \item \textbf{Virtual Environment (venv)}: Gestión de dependencias y aislamiento del entorno Python.
+\end{itemize}
+
+\subsection{Librerías auxiliares}
+
+\begin{itemize}
+    \item \textbf{NumPy}: Operaciones numéricas y manejo eficiente de arrays para procesamiento de embeddings.
+    \item \textbf{Pandas}: Manipulación y análisis de datos tabulares para organización de metadatos.
+    \item \textbf{python-dotenv}: Gestión segura de variables de entorno y configuraciones sensibles.
+    \item \textbf{Logging}: Módulo estándar de Python para registro de eventos, errores y seguimiento del sistema.
+\end{itemize}
+
 
 \section{Resultados}
 
@@ -184,12 +358,380 @@ El sistema es un apoyo informativo y no reemplaza asesoramiento profesional. Es 
 \section{Referencias}
 
 \begin{itemize}
-    \item Ley 1-2023 Atención Temprana (Junta de Andaluca)
-    \item Ley 4-2017 Derechos Discapacidad (Real Patronato de la Discapacidad)
-    \item Decreto 147-2002 Atención Educativa NEAE (Junta de Andalucía)
-    \item Solicitud Grado Discapacidad (Junta de Andalucía)
-    \item Derechos y Prestaciones Discapacidad (Junta de Andalucía)
+\item \href{https://www.juntadeandalucia.es/boja/2023/36/1}{Ley 1-2023 Atención Temprana}
+
+\item \href{https://www.rpdiscapacidad.gob.es/docs/Res_TEA.pdf}{Ley 4-2017 Derechos Discapacidad}
+
+\item \href{https://www.juntadeandalucia.es/organismos/desarrolloeducativoyformacionprofesional/areas/centros-educativos/atencion-diversidad.html}{Decreto 147-2002 Atención Educativa NEAE}
+
+\item \href{https://www.juntadeandalucia.es/servicios/sede/tramites/procedimientos/detalle/69.html}{Solicitud Grado Discapacidad}
+
+\item \href{https://www.juntadeandalucia.es/organismos/saludyconsumo/areas/salud-vida/adulta/paginas/ive-discapacidad.html}{Derechos y Prestaciones Discapacidad}
+
+\item \href{https://www.juntadeandalucia.es/organismos/inclusionsocialjuventudfamiliaseigualdad/areas/discapacidad/cvo.html}{Centros de Valoración CVO}
+
+\item \href{https://www.mirame.org/main/wp-content/uploads/2022/01/prestaciones-servicios-TEA.pdf}{Guía Prestaciones TEA Mírame PDF}
+
+\item \href{https://andaluciainforma.eldiario.es/tramites/como-solicitar-de-forma-correcta-el-reconocimiento-del-grado-de-discapacidad-en-andalucia/}{Guía Cómo Solicitar Discapacidad}
+
+\item \href{https://www.juntadeandalucia.es/organismos/inclusionsocialjuventudfamiliaseigualdad/areas/dependencia/solicitud.html}{Solicitud Dependencia}
+
+\item \href{https://www.juntadeandalucia.es/servicios/sede/ventanillas/dependencia.html}{Ventanilla Electrónica Dependencia VED}
+
+\item \href{https://www.unir.net/educacion/revista/noticias/como-solicitar-ley-dependencia-andalucia/}{Guía Ley Dependencia UNIR}
+
+\item \href{https://www.juntadeandalucia.es/boja/2023/36/1}{Texto Ley 1-2023 Atención Temprana BOJA}
+
+\item \href{https://www.familiasandalucia.es/familias-con-necesidades-especiales/}{Portal Familias Necesidades Especiales}
+
+\item \href{https://www.juntadeandalucia.es/organismos/saludyconsumo/areas/salud-vida/adulta/paginas/ive-discapacidad.html}{Listado Centros CAIT}
+
+\item \href{https://www.juntadeandalucia.es/organismos/desarrolloeducativoyformacionprofesional/areas/centros-educativos/atencion-diversidad.html}{Instrucción 2015 Detección Educativa}
+
+\item \href{https://www.juntadeandalucia.es/educacion/portals/web/escuela-familias/necesidades-especificas-de-apoyo-educativo/necesidades-educativas-especiales/trastornos-del-espectro-autista}{Portal Escuela Familias TEA}
+
+\item \href{https://www.juntadeandalucia.es/educacion/portals/web/familias}{Portal Familias Consejería Educación}
+
+\item \href{https://www.defensordelpuebloandaluz.es/reclamamos-que-se-potencie-y-extienda-la-disponibilidad-de-aulas-especificas-de-atencion-al-alumnado}{Convenio Educación Autismo Andalucía 2020}
+
+\item \href{https://www.autismoandalucia.org/entradas-autismo/comunicado-sobre-el-convenio-de-apoyo-al-alumnado-con-tea/}{Comunicado Apoyo Alumnado TEA Autismo Andalucía}
+
+\item \href{https://www.educacionfpydeportes.gob.es/servicios-al-ciudadano/catalogo/general/05/050140/ficha/050140-2024.html}{Becas NEAE Ministerio}
+
+\item \href{https://www.juntadeandalucia.es/temas/familias-igualdad/discapacidad/prestaciones.html}{Ayudas Prestaciones Discapacidad JA}
+
+\item \href{https://educaorientamalaga.com/ayudas-y-becas-para-alumnado-con-necesidades-educativas-en-andalucia/}{Becas NEAE Andalucía Educaorienta}
+
+\item \href{https://criando247.com/ayudas-autonomia-discapacidad/}{Ayudas Contratación Cuidadores}
+
+\item \href{https://www.seg-social.es/wps/portal/wss/internet/Trabajadores/PrestacionesPensionesTrabajadores/61fce0cb-bb6d-4bfa-8e83-61ec6e2bce86}{Prestaciones Estatales Discapacidad SS}
+
+\item \href{https://www.autismoandalucia.org/autismo/servicios-y-recursos/}{Autismo Andalucía Servicios}
+
+\item \href{https://www.autismosevilla.org/apoyos-individualizados.php}{Autismo Sevilla Apoyos}
+
+\item \href{https://www.autismosevilla.org/blog/programas-de-apoyo-para-familiares-cuidadores-de-personas-con-tea/}{Autismo Sevilla Apoyo Familiares}
 \end{itemize}
+\newpage
+\section*{Anexos}
+\addcontentsline{toc}{section}{Anexos}
+
+\subsection*{Anexo A: Pipeline de Procesamiento de Documentos}
+
+Este anexo presenta el código del módulo de extracción y procesamiento de documentos normativos. El sistema es capaz de procesar tanto archivos PDF directos como páginas HTML que contienen enlaces a PDFs anidados.
+
+\subsubsection*{A.1 Script Principal de Extracción}
+
+\begin{lstlisting}[language=Python, caption={Módulo de extracción y limpieza de documentos (extract\_and\_clean.py)}]
+import os
+import json
+import requests
+import fitz  # PyMuPDF
+import trafilatura
+import re
+import logging
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
+
+from config import (
+    TEXTOS_LIMPIOS_DIR as OUTPUT_DIR,
+    DOCS_ORIGINALES_DIR as OUTPUT_ORIGIN_PDFS,
+    REQUEST_HEADERS,
+    SOURCES_LIST
+)
+
+# Cargar lista de fuentes desde archivo JSON
+with open(SOURCES_LIST, "r", encoding="utf-8") as f:
+    SOURCES = json.load(f)
+
+def clean_text(text: str) -> str:
+    """Limpia el texto de espacios en blanco anomalos."""
+    if not text:
+        return ""
+    text = re.sub(r'\n\s*\n', '\n\n', text)
+    text = re.sub(r'[ \t]+', ' ', text)
+    text = '\n'.join([line.strip() for line in text.split('\n')])
+    text = re.sub(r'\n\n+', '\n\n', text).strip()
+    return text
+
+def extract_text_from_pdf(url: str) -> str:
+    """Extrae y limpia el texto de una URL PDF."""
+    try:
+        response = requests.get(url, headers=REQUEST_HEADERS, timeout=15)
+        response.raise_for_status()
+        pdf_bytes = response.content
+        full_text = ""
+        
+        with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+            logging.info(f"Procesando PDF {url} ({doc.page_count} paginas)...")
+            for page_num, page in enumerate(doc):
+                page_text = page.get_text("text")
+                lines = page_text.split('\n')
+                
+                # Filtrar lineas muy cortas o solo numeros
+                cleaned_lines = [
+                    line for line in lines 
+                    if len(line.strip()) >= 5 or not any(char.isdigit() for char in line)
+                ]
+                page_text_cleaned = '\n'.join(cleaned_lines)
+                full_text += page_text_cleaned + f"\n\n--- (Fin Pagina {page_num + 1}) ---\n\n"
+                
+        return clean_text(full_text)
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error al descargar PDF {url}: {e}")
+        return ""
+    except Exception as e:
+        logging.error(f"Error procesando PDF {url}: {e}")
+        return ""
+
+def download_pdf_original(url: str, title: str):
+    """Descarga y guarda el PDF original si la URL es .pdf."""
+    try:
+        if not os.path.exists(OUTPUT_ORIGIN_PDFS):
+            os.makedirs(OUTPUT_ORIGIN_PDFS)
+            
+        response = requests.get(url, headers=REQUEST_HEADERS, stream=True, timeout=15)
+        response.raise_for_status()
+        
+        safe_filename = re.sub(r'[^a-z0-9]+', '_', title.lower().strip()) + ".pdf"
+        filepath = os.path.join(OUTPUT_ORIGIN_PDFS, safe_filename)
+        
+        with open(filepath, "wb") as f:
+            for chunk in response.iter_content(chunk_size=2048):
+                if chunk:
+                    f.write(chunk)
+        logging.info(f"PDF original guardado en: {filepath}")
+    except Exception as e:
+        logging.error(f"Error al descargar PDF original {url}: {e}")
+
+def process_html_and_nested_pdfs(url: str, title: str) -> str:
+    """
+    Extrae el texto principal de una pagina HTML y PDFs anidados.
+    Tambien descarga los PDFs anidados.
+    """
+    try:
+        response = requests.get(url, headers=REQUEST_HEADERS, timeout=15)
+        response.raise_for_status()
+        html_content = response.text
+        
+        logging.info(f"Extrayendo texto principal de HTML: {url}")
+        main_page_text = trafilatura.extract(
+            html_content, 
+            include_comments=False, 
+            include_tables=True, 
+            deduplicate=True
+        ) or ""
+        
+        # Buscar PDFs anidados
+        soup = BeautifulSoup(html_content, 'html.parser')
+        pdf_links = []
+        for a_tag in soup.find_all('a', href=True):
+            href = a_tag['href']
+            if href.lower().endswith('.pdf'):
+                absolute_pdf_url = urljoin(url, href)
+                pdf_links.append(absolute_pdf_url)
+        
+        nested_pdf_text = ""
+        if pdf_links:
+            unique_links = set(pdf_links)
+            logging.info(f"Se encontraron {len(unique_links)} PDFs anidados unicos.")
+            
+            for pdf_url in unique_links:
+                short_title = f"{title}_anidado"
+                download_pdf_original(pdf_url, short_title)
+                logging.info(f"Procesando PDF anidado: {pdf_url}")
+                
+                nested_pdf_text += f"\n\n--- INICIO PDF ANIDADO ({pdf_url}) ---\n\n"
+                nested_pdf_text += extract_text_from_pdf(pdf_url)
+                nested_pdf_text += f"\n\n--- FIN PDF ANIDADO ({pdf_url}) ---\n\n"
+        else:
+            logging.info("No se encontraron PDFs anidados.")
+        
+        combined_text = main_page_text + nested_pdf_text
+        return clean_text(combined_text)
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error al descargar HTML {url}: {e}")
+        return ""
+    except Exception as e:
+        logging.error(f"Error procesando HTML {url}: {e}")
+        return ""
+
+def save_text_to_file(title: str, content: str, url: str):
+    """Guarda el contenido limpio en un archivo .txt."""
+    if not content:
+        logging.warning(f"No se guardo contenido para '{title}' (URL: {url}) porque estaba vacio.")
+        return
+        
+    if not os.path.exists(OUTPUT_DIR):
+        os.makedirs(OUTPUT_DIR)
+        
+    safe_filename = re.sub(r'[^a-z0-9]+', '_', title.lower().strip()) + ".txt"
+    filepath = os.path.join(OUTPUT_DIR, safe_filename)
+    
+    try:
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(f"FUENTE_ORIGINAL: {url}\n")
+            f.write(f"TITULO: {title}\n")
+            f.write("----------------------------------------\n\n")
+            f.write(content)
+        logging.info(f"Texto limpio guardado en: {filepath}")
+    except IOError as e:
+        logging.error(f"Error al guardar archivo {filepath}: {e}")
+
+def main():
+    if not os.path.exists(OUTPUT_DIR):
+        os.makedirs(OUTPUT_DIR)
+    if not os.path.exists(OUTPUT_ORIGIN_PDFS):
+        os.makedirs(OUTPUT_ORIGIN_PDFS)
+        
+    logging.info(f"Iniciando procesamiento de {len(SOURCES)} fuentes...")
+    
+    for source in SOURCES:
+        title = source['title']
+        url = source['url']
+        logging.info(f"Procesando: '{title}' ({url})")
+        
+        cleaned_content = ""
+        if url.lower().endswith('.pdf'):
+            cleaned_content = extract_text_from_pdf(url)
+            download_pdf_original(url, title)
+        else:
+            cleaned_content = process_html_and_nested_pdfs(url, title)
+            
+        save_text_to_file(title, cleaned_content, url)
+    
+    logging.info("--- Proceso completado ---")
+
+if __name__ == "__main__":
+    main()
+\end{lstlisting}
+
+\subsubsection*{Descripción del módulo}
+
+Este módulo implementa el pipeline de extracción y limpieza de documentos con las siguientes funcionalidades clave:
+
+\begin{itemize}
+    \item \textbf{Extracción de PDFs}: Utiliza PyMuPDF (fitz) para extraer texto de documentos PDF descargados desde URLs oficiales.
+    \item \textbf{Procesamiento HTML}: Emplea Trafilatura para extraer contenido principal de páginas web, eliminando elementos de navegación y publicidad.
+    \item \textbf{PDFs anidados}: Detecta automáticamente enlaces a PDFs dentro de páginas HTML y los procesa recursivamente.
+    \item \textbf{Limpieza de texto}: Normaliza espacios en blanco, elimina líneas muy cortas o numéricas que suelen ser artefactos de maquetación.
+    \item \textbf{Almacenamiento organizado}: Guarda tanto los PDFs originales como el texto limpio en directorios separados con metadatos de fuente.
+\end{itemize}
+
+\subsection*{Anexo B: Generación de Embeddings y Almacenamiento Vectorial}
+
+Este módulo implementa la generación de representaciones vectoriales (embeddings) de los fragmentos de texto procesados y su almacenamiento en ChromaDB para búsqueda semántica eficiente.
+
+\subsubsection*{B.1 Script de Generación y Almacenamiento de Embeddings}
+
+\begin{lstlisting}[language=Python, caption={Módulo de embeddings y ChromaDB (generate\_embeddings.py)}]
+import json
+import os
+from sentence_transformers import SentenceTransformer
+import chromadb
+from chromadb.config import Settings
+from config import CHUNKS_JSON, CHUNKS_OUTPUT
+
+def load_chunks(json_path):
+    """Carga los chunks de texto desde el archivo JSON."""
+    with open(json_path, 'r', encoding='utf-8') as f:
+        chunks = json.load(f)
+    return chunks
+
+def embed_texts(texts, model):
+    """
+    Genera embeddings para una lista de textos usando el modelo especificado.
+    Muestra barra de progreso durante el proceso.
+    """
+    return model.encode(texts, show_progress_bar=True)
+
+def main():
+    # Verificar existencia del archivo de chunks
+    if not os.path.exists(CHUNKS_JSON):
+        print(f"No se encontro el archivo de chunks: {CHUNKS_JSON}")
+        return
+    
+    # Cargar chunks procesados
+    chunks = load_chunks(CHUNKS_JSON)
+    texts = [chunk["text"] for chunk in chunks]
+    ids = [f"{chunk['source']}_{chunk['chunk_id']}" for chunk in chunks]
+    metadatas = [
+        {"source": chunk["source"], "chunk_id": chunk["chunk_id"]} 
+        for chunk in chunks
+    ]
+
+    # Cargar modelo de embeddings
+    print(f"Cargando modelo de embeddings...")
+    model = SentenceTransformer('all-MiniLM-L6-v2')
+
+    # Generar embeddings para todos los chunks
+    print(f"Generando embeddings para {len(texts)} chunks...")
+    embeddings = embed_texts(texts, model)
+
+    # Inicializar cliente ChromaDB con persistencia local
+    client = chromadb.PersistentClient(
+        path=CHUNKS_OUTPUT,
+        settings=Settings()
+    )
+
+    # Obtener o crear coleccion para documentos
+    collection = client.get_or_create_collection("normativa_andalucia")
+
+    # Insertar embeddings en la coleccion
+    print("Insertando embeddings en la coleccion...")
+    collection.add(
+        documents=texts,
+        embeddings=embeddings.tolist(),
+        metadatas=metadatas,
+        ids=ids
+    )
+
+    print(f"Embeddings guardados persistentemente en {CHUNKS_OUTPUT}")
+
+if __name__ == "__main__":
+    main()
+\end{lstlisting}
+
+\subsubsection*{Descripción del módulo}
+
+Este módulo implementa la capa de representación vectorial y almacenamiento con las siguientes características:
+
+\begin{itemize}
+    \item \textbf{Carga de chunks}: Lee los fragmentos de texto previamente generados desde archivo JSON estructurado.
+    
+    \item \textbf{Modelo de embeddings}: Utiliza \texttt{all-MiniLM-L6-v2}, un modelo ligero de Sentence Transformers que genera vectores de 384 dimensiones, equilibrando calidad y eficiencia computacional.
+    
+    \item \textbf{Generación de embeddings}: Procesa todos los chunks de texto en batch, mostrando progreso durante la operación para grandes volúmenes de datos.
+    
+    \item \textbf{Almacenamiento persistente}: Configura ChromaDB como base de datos vectorial local con:
+    \begin{itemize}
+        \item Persistencia en disco para mantener datos entre ejecuciones
+        \item Colección específica para normativa andaluza
+        \item Asociación de metadatos (fuente, ID) con cada embedding
+        \item Identificadores únicos compuestos por fuente y chunk ID
+    \end{itemize}
+    
+    \item \textbf{Escalabilidad}: La arquitectura permite añadir nuevos documentos incrementalmente sin reconstruir toda la base vectorial.
+\end{itemize}
+
+\subsubsection*{Consideraciones técnicas}
+
+El modelo \texttt{all-MiniLM-L6-v2} fue seleccionado por:
+\begin{itemize}
+    \item Tamaño compacto (solo 80 MB) que permite ejecución local eficiente
+    \item Buenos resultados en tareas de similitud semántica en español
+    \item Balance entre calidad de representación y velocidad de inferencia
+    \item Compatibilidad con búsqueda por similitud coseno en ChromaDB
+\end{itemize}
+
+ChromaDB proporciona:
+\begin{itemize}
+    \item Almacenamiento eficiente de vectores de alta dimensionalidad
+    \item Búsqueda k-nearest neighbors optimizada
+    \item API simple compatible con operaciones de inserción y consulta
+    \item Sin dependencias de servidores externos
+\end{itemize}
+
 
 
 \end{document}
