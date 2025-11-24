@@ -1,0 +1,5 @@
+I have updated `app.py` to load the API key from your `.env` file instead of having it hardcoded in the script.
+
+This is a much better practice for security and makes your code more portable.
+
+I have also run the script to confirm that it still works correctly. Everything is working as expected.

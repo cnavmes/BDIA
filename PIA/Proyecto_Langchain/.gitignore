@@ -1,0 +1,20 @@
+# Entornos virtuales
+env/
+venv/
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos temporales
+.DS_Store
+*.log
+*.sqlite
+*.db
+
+# Directorios específicos
+.idea/
+.vscode/
+PIA/Proyecto_Langchain/credentials.json
+PIA/Proyecto_Langchain/token.json
