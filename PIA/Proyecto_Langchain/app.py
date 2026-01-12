@@ -21,15 +21,15 @@ email_subject = "Noticias y eventos Cádiz"
 if not api_key:
     raise ValueError("Falta GEMINI_API_KEY en .env")
 
-# Inicializa LLM Gemini
+
 llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=api_key)
 
 # Gmail toolkit
 gmail_toolkit = GmailToolkit()
 
-# Define a fixed schema for send_gmail_message
+
 class FixedSendMessageSchema(BaseModel):
-    """Input schema for `FixedGmailSendMessageTool`."""
+    
     message: str = Field(
         ...,
         description="The message to send.",
@@ -43,7 +43,7 @@ class FixedSendMessageSchema(BaseModel):
         description="The subject of the message.",
     )
 
-# Create a custom tool that uses the fixed schema
+
 class FixedGmailSendMessageTool(GmailSendMessage):
     name: str = "send_gmail_message"
     description: str = (
@@ -51,16 +51,16 @@ class FixedGmailSendMessageTool(GmailSendMessage):
     )
     args_schema: Type[FixedSendMessageSchema] = FixedSendMessageSchema
 
-# Get the API resource from the original toolkit to pass to our fixed tool
+
 gmail_api_resource = gmail_toolkit.api_resource
 
-# Instantiate our fixed tool
+
 fixed_send_gmail_message_tool = FixedGmailSendMessageTool(api_resource=gmail_api_resource)
 
 # DuckDuckGo herramienta
 duckduckgo_tool = DuckDuckGoSearchRun()
 
-# RSS reader tool (personalizada)
+# RSS reader tool 
 class RSSReaderTool(BaseTool):
     name: str = "rss_reader"
     description: str = "Obtiene y resume las noticias desde una URL RSS indicada. Incluye los títulos, resúmenes y enlaces HTML de las noticias."
@@ -81,7 +81,7 @@ class RSSReaderTool(BaseTool):
 
 rss_tool = RSSReaderTool()
 
-# Todas las herramientas disponibles para el agente
+
 tools = [fixed_send_gmail_message_tool, duckduckgo_tool, rss_tool]
 agent_executor = create_agent(llm, tools)
 

@@ -2,3 +2,5 @@
 .vscode/settings.json
 PIA/Proyecto_Langchain/credentials.json
 PIA/Proyecto_Langchain/token.json
+.env
+env

@@ -1,0 +1,11 @@
+feature,importance
+payment_to_income_ratio,0.02318638843364413
+loan_to_income_ratio,0.024774091750193124
+derogatory_marks,0.025208609530450777
+interest_rate,0.060356582025107845
+age,0.06789356418328633
+defaults_on_file,0.07337471701847548
+credit_history_years,0.07345591335366004
+delinquencies_last_2yrs,0.0846221650486401
+debt_to_income_ratio,0.18701853782957115
+credit_score,0.30965245153944493
