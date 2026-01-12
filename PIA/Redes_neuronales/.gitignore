@@ -1,0 +1,13 @@
+# Entorno virtual
+venv/
+.venv/
+env/
+# Archivos de cache de Python
+__pycache__/
+*.py[cod]
+*$py.class
+# Salidas de log/texto temporales
+output_casas.txt
+# Otros
+.vscode/
+.idea/
