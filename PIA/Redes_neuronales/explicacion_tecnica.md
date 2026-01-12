@@ -18,40 +18,36 @@ El objetivo es que la red aprenda la función lineal $f(x) = wx + b$.
 
 ---
 
-## 2. Predicción de Precios de Viviendas (Regresión Multivariable)
+## 2. Predicción de Precios de Viviendas (Pipeline Completo)
 
-### Pasos Técnicos:
+Siguiendo el temario avanzado, hemos estructurado el proceso en bloques pedagógicos:
 
-#### A. Preprocesamiento y Limpieza
-1.  **Tratamiento de Outliers (Valores Atípicos)**:
-    -   Se utilizan los cuantiles 0.10 y 0.90 de la variable `SalePrice`.
-    -   *Razón*: Las redes neuronales son sensibles a valores extremos que pueden sesgar el aprendizaje de los pesos.
-2.  **Ingeniería de Características (Feature Engineering)**:
-    -   Creación de `reformada`: Variable booleana transformada a entero (0 o 1). Compara `YearRemodAdd` vs `YearBuilt`.
+### Bloque 1 & 2: Comprensión y Correlación
+- **EDA (Exploratory Data Analysis)**: Usamos `info()` y `describe()` para identificar el tipo de variables (numéricas vs categóricas) y sus escalas.
+- **Matriz de Correlación**: Calculada con `df.corr()`. Nos permite ver qué variables tienen mayor impacto lineal sobre el `SalePrice` (ej: `OverallQual`, `GrLivArea`).
+  - *Resultado*: Se genera `correlation_matrix.png`.
 
-#### B. Preparación para el Entrenamiento
-1.  **División del Dataset**: Uso de `train_test_split` (80% entrenamiento, 20% validación). Es vital para evaluar la capacidad de generalización y detectar el *overfitting*.
-2.  **Escalado de Características (StandardScaler)**:
-    -   **CRUCIAL**: Las redes neuronales utilizan algoritmos basados en gradiente. Si una variable tiene un rango de 0-10 (habitaciones) y otra de 0-200.000 (precio), la red tardará mucho en converger o fallará.
-    -   `StandardScaler` normaliza los datos para que tengan media 0 y desviación típica 1.
+### Bloque 3 & 4: Limpieza y Tratamiento
+- **Valores Nulos**: Implementamos imputación mediante la mediana (`fillna(df.median())`) para asegurar que la red neuronal reciba datos completos.
+- **Tratamiento de Outliers**: Mantenemos el filtrado por percentiles (10-90) para eliminar ruidos extremos que dificulten el aprendizaje de la red.
 
-#### C. Arquitectura y Entrenamiento
-1.  **Modelo B (Multivariable)**:
-    -   `hidden_layer_sizes=(20, 20)`: Red con dos capas ocultas de 20 neuronas cada una. Esto permite capturar interacciones complejas entre variables (ej: cómo influyen los baños si la casa es reformada).
-    -   `max_iter=3000`: Se aumenta el límite de iteraciones para permitir que el optimizador encuentre el mínimo global de la función de pérdida.
+### Bloque 5 & 7: Transformación y Codificación
+- **Ingeniería de Variables**: Creación de la columna `reformada`.
+- **Clasificación Auxiliar**: Para demostrar el uso de una **Matriz de Confusión**, categorizamos el precio en 3 niveles (Bajo, Medio, Alto) usando `pd.qcut`.
 
-#### D. Evaluación y Predicción Final
-1.  **Métricas de Error**:
-    -   **MAE (Error Medio Absoluto)**: Promedio de las desviaciones en dólares. Muy interpretable.
-    -   **RMSE (Raíz del Error Cuadrático Medio)**: Penaliza más los errores grandes.
-2.  **Inferencia en Test Set**:
-    -   Se aplican las **mismas transformaciones** al archivo `test.csv` (ingeniería de variables y escalado usando el *scaler* ya entrenado).
-    -   Los resultados se exportan a `predicciones_casas.csv`.
+### Bloque 6 & 8: Escalado y Partición
+- **StandardScaler**: Transformamos las características para que tengan media 0 y varianza 1. Sin esto, la red no converge correctamente debido a la diferencia de escalas entre "habitaciones" (0-10) y "metros cuadrados" (0-5000).
+- **Train/Test Split**: División 80/20 para evitar el *Data Leakage* y validar el rendimiento real.
+
+### Bloque 10: Evaluación y Matrices
+1. **Regresión**: Evaluamos con MAE y RMSE para medir la precisión en dólares.
+2. **Clasificación**: Entrenamos un `MLPClassifier` para predecir la categoría de precio.
+   - **Matriz de Confusión**: Generamos `confusion_matrix.png` para visualizar dónde el modelo confunde una categoría con otra.
 
 ---
 
 ### Stack Tecnológico
--   **Python 3.12**
--   **Pandas**: Manipulación de datos estructurados.
--   **Scikit-Learn**: Implementación del `MLPRegressor` y preprocesamiento.
--   **NumPy**: Operaciones matriciales eficientes.
+- **Python 3.12**
+- **Pandas & NumPy**: Procesamiento de datos.
+- **Scikit-Learn**: Modelos `MLPRegressor` y `MLPClassifier`.
+- **Matplotlib**: Generación de visualizaciones gráficas.

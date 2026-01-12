@@ -24,15 +24,16 @@ El niño no conoce la fórmula ($F = 1.8 \times C + 32$), pero después de mirar
 
 Esto es un poco más difícil. Queremos saber cuánto vale una casa, pero hay casas muy raras que confunden al niño (mansiones de lujo o casas en ruinas).
 
-**Paso 1: Limpieza (Quitar lo raro)**
-Primero, tiramos a la basura las casas que son demasiado caras o demasiado baratas para que no "contaminen" el aprendizaje. Nos quedamos con las casas normales.
+**Paso 1: Detectar las mejores pistas (Correlación)**
+Antes de empezar, el niño mira cuáles son las pistas que más ayudan. Descubre que el tamaño de la casa y la calidad general son los "chivatos" más fiables para saber el precio.
 
-**Paso 2: Inventar una pista nueva**
-Le dimos una pista extra al niño: "¿Ha sido reformada la casa recientemente?". Si el año de reforma es más nuevo que el de construcción, el niño anota un "sí".
+**Paso 2: Limpieza (Quitar lo raro y completar huecos)**
+- Tiramos las casas demasiado raras (outliers).
+- Si a una casa le faltaba el dato de cuántos baños tiene, le ponemos la media de las demás para que el niño no se quede bloqueado (imputación).
 
-**Paso 3: El examen (Dos modelos)**
-- **Modelo A (El vago):** Solo mira cuántas habitaciones tiene la casa. Acierta un poco, pero se equivoca bastante.
-- **Modelo B (El aplicado):** Mira las habitaciones, los baños (completos y aseos) y si está reformada. Al tener más pistas, sus "adivinanzas" son mucho más precisas.
+**Paso 3: El examen de los colores (Matriz de Confusión)**
+Para ver si el niño es bueno, le pedimos que pinte las casas de 3 colores: Verde (Barata), Azul (Normal), Rojo (Cara).
+La **Matriz de Confusión** es un cuadro que nos dice cuántas veces el niño pintó de azul una casa que era verde. ¡Así sabemos en qué tipo de casas se equivoca más!
 
 ---
 
