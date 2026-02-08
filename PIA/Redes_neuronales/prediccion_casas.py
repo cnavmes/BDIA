@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.neural_network import MLPRegressor, MLPClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_error, mean_squared_error, confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import mean_absolute_error, mean_squared_error, confusion_matrix, ConfusionMatrixDisplay, mean_absolute_percentage_error
 from sklearn.preprocessing import StandardScaler
 
 # ==========================================
@@ -30,12 +30,22 @@ print("\nCorrelación con SalePrice (Top 10):")
 print(correlation_matrix['SalePrice'].sort_values(ascending=False).head(10))
 
 # Guardar matriz de correlación como imagen
-plt.figure(figsize=(12, 10))
-plt.matshow(correlation_matrix, fignum=1)
-plt.colorbar()
+fig, ax = plt.subplots(figsize=(15, 12))
+cax = ax.matshow(correlation_matrix, cmap='coolwarm')
+fig.colorbar(cax)
+
+# Añadir nombres de las variables
+ax.set_xticks(np.arange(len(correlation_matrix.columns)))
+ax.set_yticks(np.arange(len(correlation_matrix.columns)))
+ax.set_xticklabels(correlation_matrix.columns, rotation=90)
+ax.set_yticklabels(correlation_matrix.columns)
+
 plt.title("Matriz de Correlación", pad=20)
+plt.tight_layout()
 plt.savefig("correlation_matrix.png")
 print("\nMatriz de correlación guardada como 'correlation_matrix.png'")
+plt.show() # Mostrar interactivamente
+plt.close() # Cerrar para liberar memoria
 
 # ==========================================
 # BLOQUE 3 & 4: LIMPIEZA Y OUTLIERS
@@ -92,9 +102,12 @@ reg_model.fit(X_train_scaled, y_train_reg)
 
 preds_reg = reg_model.predict(X_test_scaled)
 mae = mean_absolute_error(y_test_reg, preds_reg)
-rmse = np.sqrt(mean_squared_error(y_test_reg, preds_reg))
+rmse = np.sqrt(mean_squared_error(y_test_reg, preds_reg) )
+mape = mean_absolute_percentage_error(y_test_reg, preds_reg)
+
 print(f"Regresión - MAE: ${mae:.2f}")
 print(f"Regresión - RMSE: ${rmse:.2f}")
+print(f"Regresión - MAPE (Error Porcentual): {mape*100:.2f}%")
 
 print("\n--- Bloque 10: Modelado (Clasificación para Confusión) ---")
 clf_model = MLPClassifier(hidden_layer_sizes=(10, 10), max_iter=2000, random_state=42)
@@ -107,12 +120,14 @@ cm = confusion_matrix(y_test_clf, preds_clf)
 print("Matriz de Confusión (Categorías de Precio):")
 print(cm)
 
-plt.figure(figsize=(8, 6))
+fig, ax = plt.subplots(figsize=(8, 6))
 disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["Bajo", "Medio", "Alto"])
-disp.plot(cmap=plt.cm.Blues)
+disp.plot(cmap=plt.cm.Blues, ax=ax)
 plt.title("Matriz de Confusión: Categorías de Precio")
 plt.savefig("confusion_matrix.png")
 print("\nMatriz de confusión guardada como 'confusion_matrix.png'")
+plt.show() # Mostrar interactivamente
+plt.close()
 
 # ==========================================
 # PARTE FINAL: PREDICCIÓN EN TEST.CSV

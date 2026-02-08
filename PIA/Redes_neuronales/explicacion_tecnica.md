@@ -40,7 +40,10 @@ Siguiendo el temario avanzado, hemos estructurado el proceso en bloques pedagóg
 - **Train/Test Split**: División 80/20 para evitar el *Data Leakage* y validar el rendimiento real.
 
 ### Bloque 10: Evaluación y Matrices
-1. **Regresión**: Evaluamos con MAE y RMSE para medir la precisión en dólares.
+1. **Regresión**: Evaluamos con:
+   - **MAE**: Error absoluto medio en dólares.
+   - **RMSE**: Error cuadrático medio (penaliza errores grandes).
+   - **MAPE**: Error porcentual absoluto medio. Es el más intuitivo para el usuario final ya que expresa el error como un porcentaje del precio real.
 2. **Clasificación**: Entrenamos un `MLPClassifier` para predecir la categoría de precio.
    - **Matriz de Confusión**: Generamos `confusion_matrix.png` para visualizar dónde el modelo confunde una categoría con otra.
 
